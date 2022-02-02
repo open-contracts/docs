@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Open Contacts Default Image'
+project = 'Open Contacts Docs'
 copyright = '2022, OpenContracts.io'
 author = 'Krishnan Srinivasan'
 

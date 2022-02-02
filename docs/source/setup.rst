@@ -1,4 +1,4 @@
-Setup
+How to setup an Oracle Provider node
 =====
 
 Setting up AWS EC2 Instances

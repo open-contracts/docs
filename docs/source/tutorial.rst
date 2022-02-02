@@ -1,4 +1,4 @@
-Tutorial: Writing an OpenContract
+Walkthrough of an advanced Open Contract
 =====
 
 .. Define oracle node in "glossary," as well as OpenContract, oracle.py, and contract.sol
@@ -56,7 +56,7 @@ Next, we will use the example of the `fiat-swap contract <https://github.com/ope
 contract inheriting from the `OpenContract` class, and creating additional functionality
 to design a trustless fiat to crypto on-ramp.
 
-Step-by-step: `fiat-swap` contract
+Implementing fiat-swap contract in Solidity
 --------------------------------
 .. TODO: include motivation for why OpenContracts is a suitable protocol for fiat-swap
 
@@ -198,3 +198,5 @@ Note that the inherited `checkOracle` method called here to ensure that the
 Oracle sending the buyTokens method is verified before the payment is allowed to
 go through.
 
+Developing fiat-swap oracle logic in git repo
+-----------

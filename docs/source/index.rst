@@ -3,15 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Open Contacts documentation!
-=======================================
+Open Contacts Documentation
+===========================
+
+Overview
+------------
+
+OpenContracts consist of smart contracts on Ethereum, and off-chain logic bundled in a git repo, (for now, only GitHub is supported but we may integrate with IPFS in the future).
+We automatically create a Web3 page at https://app.opencontracts.io/#/github-user/repo-name where users can access your contract, if the repo is set up correctly.
+In these docs, you will learn:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-   setup
+   structure
    tutorial
+   setup
 
 
 Indices and tables
