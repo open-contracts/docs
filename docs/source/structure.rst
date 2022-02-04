@@ -84,7 +84,7 @@ Finally, including the original `contract.sol` file in the repository is an opti
 effect on the actual contract that is deployed on the network, and should not
 be trusted as a source of truth in terms of the contents of an actual contract.
 
-Writing and deploying smart contracts that require specific oracle logic
+Writing and deploying smart contracts with oracle logic
 -------------
 2] how to write and deploy smart contracts that require a specific oracle logic
 
@@ -92,11 +92,108 @@ In order to create an Open Contract, you must first write a piece of solidity co
 defines the Ethereum smart contract logic. For a more comprehensive tutorial of
 Ethereum smart contacts, we recommend starting `here <https://docs.soliditylang.org/en/v0.7.4/solidity-by-example.html>`_.
 
-Writing this contract can be broken into two main steps,
-Use https://github.com/open-contracts/proof-of-id/blob/main/contract.sol as a simple example for a contract that requires an oracle logic (fiat swap is too complex. but we'll keep it as a tutorial for a more 'advanced' contract)
-keep the oracleID at 'any' (which allows all hashes), but put a warning that this eventually needs to be replaced by the hash that we compute in Step 3.
-walk people through how to deploy it in remix, show them were to get address and abi to put it into interface.json
-now you can already access the contract on our website! but you won't be able to call the oracle function yet.
+In this tutorial, we will go through writing the `Proof-of-id contract <https://github.com/open-contracts/proof-of-id/blob/main/contract.sol>`_ step-by-step.
+Writing this contract can be broken into two main steps: writing the `contract.sol` and writing the oracle logic.
+
+**Writing contract.sol**
+First we'll cover the template contract that you will be using. Navigate to 
+`Remix IDE <https://remix.ethereum.org/>`_ in your browser, and add the file
+`contract.sol` under the `contracts/artifacts/` directory.
+
+Like all other contracts, it will be importing the `OpenContractRopsten.sol` defined below:
+
+.. code-block:: solidity
+
+    contract OpenContract {
+        address private hub = 0xACf12733cBa963201Fdd1757b4D7A062AD096dB1;
+        mapping(bytes8 => bytes32) private allowedID;
+
+        function setOracle(bytes32 oracleID, bytes8 selector) internal {
+            allowedID[selector] = oracleID;
+        }
+
+        modifier checkOracle(bytes32 oracleID, bytes4 selector) {
+            require(msg.sender == hub, "Can only be called via Open Contracts Hub.");
+            if (allowedID[selector] != "any") {
+                require(oracleID == allowedID[selector], "Incorrect OracleID.");
+            }
+            _;
+        }
+    }
+
+This contract defines a few simple properties: a hub (used to ensure that the
+contract is being called from a trusted "hub"), and a map of allowed IDs, called an **oracleID**. **oracleIDs**
+are a unique hash of an oracle node that is allowed to execute a given contract, and is mapped to by a **selector**.
+The **selector** is a function name that the oracle will call to resolve the contract.
+When the constructor of a contract inheriting `OpenContract` is called, it will use the `setOracle` function to assign an oracleID to the contract. However, during development, the oracleID `any` is used to allow all oracle hashes. Next, the function modifier `checkOracle` is used as a method to check that an oracleID is valid before proceeding to execute the contract's oracle function. You will see an example of this next when defining the proof-of-id contract's `createID` method, which uses
+the checkOracle function.
+
+The proof-of-id contract uses the secure computation environment of the Oracle nodes to
+allow users to generate a unique encrypted ID that is verified using an external form of verification. A user proves their identity to the oracle by their SSN account.
+First, let us define the Proof-of-id OpenContract in contract.sol in Remix under `contracts/artifacts/contract.sol`: 
+
+.. code-block:: solidity
+
+    pragma solidity ^0.8.0;
+    import "https://github.com/open-contracts/protocol/blob/main/solidity_contracts/OpenContractRopsten.sol";
+
+
+    contract ProofOfID is OpenContract {
+
+        mapping(bytes32 => address) private _account;
+        mapping(address => bytes32) private _ID;
+
+        constructor() {
+            setOracle("any", this.createID.selector);  // developer mode, allows any oracle for 'createID'
+        }
+        ....
+    }
+
+In the first half of the contract, we define the solidity syntax version, followed by
+importing the OpenContract.sol base contract implementation which we defined above.
+Next, the contract `ProofOfID` is defined inheriting the OpenContract structure
+(see `link <https://www.tutorialspoint.com/solidity/solidity_inheritance.htm>`_ for 
+explanation of Solidity inheritance).
+The two mappings _account and _ID form a bi-directional mapping between ETH
+accounts addresses and the generated unique IDs for a user, which is acquired
+once they have proven their identity to the oracle by securely verifying their last
+4-digits of their SSN.
+As mentioned above, in the constructor, the `setOracle` method currently uses
+"any" for the oracleID to allow the createID method to be called on any oracle 
+node for development purposes.
+
+Once the mappings and constructor are defined, functions used to get IDs and accounts
+using these mappings are specified, followed by the createID method, which
+is called by the oracle when the SSN proof has been verified.
+
+.. code-block:: solidity
+
+    contract ProofOfID is OpenContract{
+    ....
+        function getID(address account) public view returns(bytes32) {
+            require(_ID[account] != bytes32(0), "Account doesn't have an ID.");
+            return _ID[account];
+        }
+
+        function getAccount(bytes32 ID) public view returns(address) {
+            require(_account[ID] != address(0), "ID was never created.");
+            return _account[ID];
+        }
+
+        function createID(bytes32 oracleID, address user, bytes32 ID) 
+        public checkOracle(oracleID, this.createID.selector) {
+            _ID[_account[ID]] = bytes32(0);
+            _account[ID] = user;
+            _ID[user] = ID;
+        }
+    }
+
+Note that for any function to modify the _account and _ID mappings, they must
+first call the OpenContract's checkOracle function modifier which confirms that the
+request is being made by a valid oracleID. It is important to note that 
+the first argument of any method using the checkOracle function must always
+have oracleID as it's first argument, so it can properly interact with the
+function modifier. After this check is passed, the user is able to map their address to their generated user ID, completing the proof-of-ID contract.
 
 Implementing the oracle logic and include it in your repo
 -------------
