@@ -24,7 +24,7 @@ First we'll cover the template contract that you will be using. Navigate to
 `Remix IDE <https://remix.ethereum.org/>`_ in your browser, and add the file
 `contract.sol` under the `contracts/artifacts/` directory.
 
-Like all other contracts, we will be importing the `OpenContractRopsten.sol` contract as covered in :any:`structure#writing-and-deploying-smart-contracts-with-oracle-logic`.
+Like all other contracts, we will be importing the `OpenContractRopsten.sol` contract as covered in :ref:`writing-deploying`.
 
 .. code-block:: solidity
 
