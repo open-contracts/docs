@@ -9,10 +9,11 @@ Open Contracts Documentation
 Overview
 ------------
 
-Open Contracts consist of smart contracts on Ethereum, and off-chain logic bundled in a git repo. For now, only GitHub is supported but we may integrate with IPFS in the future.
-If you set up your repo correctly, you will automatically create a Web3 page at https://dapp.opencontracts.io/#/github-user/repo-name where users can interact with your contract.
+Open Contracts consist of smart contracts on Ethereum, and off-chain logic bundled in a git repo, which must be hosted on GitHub for now.
 
-In these docs, you will learn:
+If you set up your repo correctly, you will automatically create a Web3 page at https://dapp.opencontracts.io/#/github-user/repo-name where users can interact with your contract. Anyone can fork your repo to host your contract under their own github username as well. 
+
+Fortunately, the docs are short and simple:
 
 .. toctree::
    :maxdepth: 2
