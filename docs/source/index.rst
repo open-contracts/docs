@@ -17,7 +17,5 @@ In these docs, you will learn:
    :maxdepth: 2
 
    structure
-   tutorial
-   setup
 
 
