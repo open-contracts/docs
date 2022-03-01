@@ -57,7 +57,7 @@ Before serving your enclave, make sure you edit the environment variables inside
   PROVIDER=<---the Ethereum address that should get your rewards-->
   REGISTRY=<---the IP of an existing registry--->
   PRICE=<---the amount of OPN * 10^18 that you demand users pay when submitting your results. --->
-  NO_DEMAND_TIMEOUT=<---how long the oracle enclave should run before shutting down. leave empty to run forever-->
+  NO_DEMAND_TIMEOUT=<---how long the oracle enclave should run before shutting down if no user arrives. leave empty to run forever-->
 
 Note that the registry will always forward the user to the cheapest available oracle. Finally, start your enclave via:
 
