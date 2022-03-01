@@ -1,7 +1,7 @@
 Providing Enclaves to the Protocol
 =====
 
-Setting up AWS EC2 Instance
+Setting up the AWS EC2 Instance
 ----------------------------
 This doc will outline how to set up and provide and our oralce enclave to the protocol, earning OPN in exchange.
 We will update the docs once the provision of registry enclaves is supported as well.
