@@ -1,4 +1,4 @@
-How to write a simple Open Contract
+Writing a simple Open Contract
 ====================================
 
 Structuring your contract's git repo
