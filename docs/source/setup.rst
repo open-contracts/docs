@@ -29,12 +29,13 @@ After loggin into your node, you need to run the following commands before you c
     pip3 install -r ec2_instance/requirements.txt
     sudo reboot
 
-Then login again, and proceed to build the enclaves.
+Which installs dependencies and downloads our repo from https://github.com/open-contracts/enclave-protocol.
+Login again afterwards, and proceed to build the enclave images.
 
 
 Build and run enclave
 ---------------------
-To build the enclaves from source, you simply run:
+To build the enclave images from source, you simply run:
 
 .. code-block:: console
 
@@ -47,34 +48,33 @@ permitted by the protocol:
 * Oracle Enclave: ``ba19b0568898f7eed74c911b29cccd6d026f918fa77953a705f142d06d33f51dfb00bda8f4e90e13755374548b0430e4``
 * Registry Enclave: ``87eb8417e993acfa43fc8e46a1ef0fe50cce86e9b8dcaf22b1e623f8f11a272a0352b851a0503327fb55fd6ecf0259d3``
 
+To get those, you need to run ``sh tars2image.sh`` in the respective enclave folder instead, which will decompress our docker image and deterministally create the enclave image from there. It will also start an interactive terminal in the docker container so you can convice yourself of the source code executed by the enclave.
 
-Make sure you edit the environment variables inside `./serve_oracle.sh` appropriately:
-
-.. code-block:: console
-
-    PROVIDER=<---your Ethereum address-->
-    REGISTRY_ENCLAVE_IP=<---the IP of an existing registry. Leave empty to start a new 'root' registry--->
-
-Then run:
+Before serving your enclave, make sure you edit the environment variables inside `serve_oracle.sh` appropriately:
 
 .. code-block:: console
 
-    tmux new-session -d -s enclaveSession "sh serve_enclave.sh"
+  PROVIDER=<---the Ethereum address that should get your rewards-->
+  REGISTRY=<---the IP of an existing registry--->
+  PRICE=<---the amount of OPN * 10^18 that you demand users pay when submitting your results. --->
+  NO_DEMAND_TIMEOUT=<---how long the oracle enclave should run before shutting down. leave empty to run forever-->
 
-To start serving your enclave. You can attach to the console via
+Note that the registry will always forward the user to the cheapest available oracle. Finally, start your enclave via:
 
 .. code-block:: console
 
-    tmux attach-session -d -t enclaveSession
+    sh serve_enclave.sh
+
+You can now log out. To see the output of the EC2 side, you can attach to the console via
+
+.. code-block:: console
+
+    tmux attach
 
 Exit the console via ``Ctrl+B``, then ``D``.
-Important: make sure you install https://github.com/open-contracts/default-image/blob/main/oracle_enclave/backend/devRootCA.crt as a trusted certificate authority in your browser/system, otherwise your browser will reject the connection.
 
-Running Oracle Enclaves
+Running a Registry Enclave
 -----------------------
 
-In order to save on AWS credits/spending, it is recommended to keep several stopped EC2 instances that can be started only
-when a user wishes to interact with an oracle enclave. To enable this, from the EC2 dashboard, having selected (checked) the 
-respective (stopped) oracle EC2 instances, go to ``Actions > Instance settings > Edit user data`` and paste the contents of
-userdata.txt in the textbox.
- 
+Right now, the verifier contract does not permit new registries yet, to give the main developers tighter controls of the system initially.
+However, you are free to run the code - it's analogous to the oracle enclave code. We'll provide more detailed instructions once the registries are permissionless.
