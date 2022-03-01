@@ -4,11 +4,7 @@ How to write a simple Open Contract
 Structuring your contract's git repo
 ------------------------------------
 
-To help illustrate the structure of a simple Open Contract, below we walkthrough
-the generated file-tree for a sample contract. The ``contract.sol`` file is one that can be treated
-as optional, and should be included mainly for transparency so that the contract
-source code is viewable to the user. We will explain later on how to implement
-this as well.
+First, we need to clarify how to structure an Open Contract repo The ``contract.sol`` and ``README.md`` files aren't used by the protocol and just recommended to make it easier to interpret the oracle logic. The protocol ultimately only cares about the contract that is deployed on Ethereum, and users should verify its code on etherscan for example, which they can do by clicking on the contract address at the top of the automatically generated frontend at https://dapp.opencontracts.io/#/your-github-account/your-contract-repo . The remaining files *are* used by the protocol, so let's dive into them:
 
 ::
 
@@ -22,68 +18,49 @@ this as well.
         └── requirements.txt
 
 The first file that you will need to generate for your contract is the ``interface.json``.
-In brief, this file will determine the functions and parameters needed to implement
-the contract, and is used to allow a user to interact with the rendered Web3 page for
-your contract. As an example, here is the ``interface.json`` from the example `proof-of-id
+It's job is to tell the frontend where to find the contract on chain and what functions it has. It also contains the names and descriptions it should display to the user. As an example, here is the ``interface.json`` from the example `proof-of-id
 contract <https://github.com/open-contracts/proof-of-id>`_. 
 
 .. code-block:: json
 
-    {
-     "name": "Proof of ID",
-     "address": {
-       "ropsten": "0xA520fc19E71edDb52134eD5B146c2f5887CBfB13"
-     },
-     "descriptions": {
-       "contract": "This is the contract description",
-       "createID": "This is the description for the createID function"
-     },
-     "abi": [{...}]
-     }
+ {
+  "name": "Proof of ID",
+  "address": {
+    "ropsten": "0x47d162636F3178e0279eBD7fb5e7803cd538C260",
+    "optimism": "0xcB3420B31B75a938D937713C434d2379640E496F"
+  },
+  "descriptions": {
+    "contract": "This is contract allows you to...",
+    "createID": "This function starts an interactive oracle session in which...",
+    "getAccount": "A simple function which returns the Ethereum account belonging to a given ID, if it exists.",
+    "getID": "A simple function which returns the ID for a given account, if ..."
+  },
+  "abi": [{...}, {...}, ...]
+ }
 
-At the top level of the interface JSON object is the MetaMask network name under address (in this case, ropsten) mapped to the address of the published contract, which we will discuss how to
-get below. In order to extend your
-contract to other networks, such as mainnet, you will need to add another field to this dictionary with the correct name for that network.
-Below this are fields that specify the the contract (using the "contract" field) descriptions for functions defined by the contract, and the contract ABI (or Application Binary Interface). The ABI is a list of functions that are exposed by the contract, including information about their respective inputs and outputs.
-When editing the contract Solidity code in the `Remix IDE <https://remix.ethereum.org/>`_, 
-you will have an option to automatically generate and copy the contract's ABI. You can 
-copy the contract's ABI by clicking on the copy-paste icon below **Compilation Details** once you have 
-compiled the contract having written it in Remix.
-This will return a list of all method signatures used in the contract, each represented
-as a JSON object with properties such as inputs (optional), outputs, stateMutability, type, description.
-Add this ABI to the JSON under the "abi" field (as shown in the example above), which is
-used to help load the contract on the OpenContracts dapp page.
+At the top level of the interface JSON object is the contract "name", and a mandatory dict containing the addresses of the contract on various chains. The supported strings are "mainnet", "optimism" and "ropsten", with more to come in the near future. Below, you can optionally specify "descriptions" dict containing a string that either explains the "contract" as a whole, or the respective contract function, e.g. "createID". These will be displayed to the user by the frontend. 
+
+The final, mandatory field is the contract ABI (short for *Application Binary Interface*). The ABI is a list of functions that are exposed by the contract, including information about their respective inputs and outputs. When compiling a Solidity contract in the `Remix IDE <https://remix.ethereum.org/>`_, it automatically generates the ABI for you. You just need to copy it by clicking on the copy-icon below **Compilation Details** once you have compiled the contract, and paste it into the ``ìnterface.json``. Two additional ABI tipps:
+
+* Tip 1: your Solidity code, and as a result the generated ABI, often doesn't contain a name for some of the input and output variables When you declare a mapping for example, its input usually isn't named, and the ABI will contain an empty string instead. In these cases, you can just edit the ABI names manually to make things easier for your users.
+* Tip 2: because Solidity developers must represent floating point numbers as integers, another feature that we support is to add a "decimals" field to integer inputs or output, and our interface will know where to put the decimal point. For example, since 1 ETH is represented as a 1 followed by 18 zeros, we add ``"decimals": 18`` to the output element of the ``amountOffered`` `function of the FiatSwap contract <https://github.com/open-contracts/fiat-swap/blob/849e81eee05498536aeed8683d6ae977c82db1fd/interface.json#L160/>`_. 
 
 After adding the ABI to the JSON, you will also need to deploy the contract to get its contract address.
-To do this, open the **Deploy and Run Transactions** tab (bottom icon in Remix), and hit Deploy, after which you can copy the
-contract address below **Deployed Contracts**. When testing out your contracts, make sure to use
-the Ropsten Network and not the mainnet.
+To do this, open the **Deploy and Run Transactions** tab (bottom icon in Remix). For 'Environment', you want to select 'Injected Web3' which refers to your MetaMask wallet. When hitting "Deploy", your contract will be deployed to whatever network you set in your MetaMask wallet. For testing an Open Contract, we currently support the Ropsten testnet. Set your Metamask to Optimism if you're ready to go live with real ETH. Once the block containing your deployment is confirmed, you can copy the contract address from the corresponding element of the **Deployed Contracts** list and add it to the `interface.json`.
 
-After adding the ABI and contract address the JSON is complete, and is almost ready
-to create a visual explorer for your contract using the `OpenContracts Dapp frontend <https://dapp.opencontracts.io>`_.
-If your contract will use an oracle to parse and verify internet data that is generated by a user
-(which will involve connecting to an `AWS Secure Enclave <https://aws.amazon.com/ec2/nitro/nitro-enclaves/>`_), an additional directory
-(named the same as the oracle function in the contract) will need to be added to the git repo. This directory
-should contain a file `oracle.py`, which contains the code to parse user data and attest to the OpenContracts backend
-that the submitted user data is what was expected to trigger the contract function. It will also
-contain the `requirements.txt` file, which will contain Python packages that the oracle script can access.
+Now your ``interface.json`` is complete, and you can already interact with your contract using the `OpenContracts Dapp frontend <https://dapp.opencontracts.io>`_. The interface will treat every contract function as a regular Solidity function. 
 
-Once having created an oracle folder for each oracle function (usually there isn't more than one), you
-can run the **oracle pack** script at the root of the repo. This creates set of pip wheels that ensure
-that the enclave running the oracle script has the necessary python dependencies, in addition to
-generating a oracleHash which is used to register the repo with the OracleHub in its current state with the pip dependencies,
-so that the contract can trust the code that triggers the contract (for more details, visit `protocol.md <https://www.opencontracts.io/#/protocol>`_). 
-To run the pack script, simply run
+However, what makes Open Contracts more interesting than regular smart contracts, are *oracle functions*, i.e. functions of your contract which can only be called with the results of a particular `oracle.py` python script, which is securely executed in an `AWS Nitro Enclave <https://aws.amazon.com/ec2/nitro/nitro-enclaves/>`_ with full internet access. For those functions, you need to create an additional directory in the root of your repo, with the folder name being the same as that of oracle function. This directory
+should contain a file called `oracle.py`, which contains the logic for downloading some web data and extracting some information from it. It will also
+contain a `requirements.txt` file, which will list all Python (pip) packages that your oracle script should use.
+
+Once you created an oracle folder for each oracle function (in our sample contracts there's usually just one), you have to run the **oracle pack** script by running
 
 .. code-block:: console
 
   $ curl -Ls pack.opencontracts.io | sh
 
-in the command line. Doing this is allows for the use of 3rd party APIs or libraries that may be required for the oracle logic, as
-well as the verification by the contract that the oracle.py code is 
-
-Finally, including the original `contract.sol` file in the repository is an optional step to help make the contract visible in the generated Web3 Open Contract site. However, this has no
-effect on the actual contract that is deployed on the network, and should not be trusted as the source of truth when viewing the contents of an actual contract.
+in the command line at the root of your contract repo. This downloads and compresses the packages listed in the `requirements.txt` file and places them into the respective oracle folders. It also generates an `oracleHashes.json` file at the root of your repo, which contains the SHA-256 hash of every oracle folder, uniquely identifying its contents. As we will show you shortly, these hashes are hardcoded into your contract in a way that allows our protocol to ensure that the oracle function can only be called with the results of exactly this specific oracle folder, executed in one of our oracle enclaves.
 
 .. _writing-deploying:
 
