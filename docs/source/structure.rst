@@ -4,7 +4,7 @@ How to write a simple Open Contract
 Structuring your contract's git repo
 ------------------------------------
 
-First, we need to clarify how to structure an Open Contract repo The ``contract.sol`` and ``README.md`` files aren't used by the protocol and just recommended to make it easier to interpret the oracle logic. The protocol ultimately only cares about the contract that is deployed on Ethereum, and users should verify its code on etherscan for example, which they can do by clicking on the contract address at the top of the automatically generated frontend at https://dapp.opencontracts.io/#/your-github-account/your-contract-repo . The remaining files *are* used by the protocol, so let's dive into them:
+First, we need to clarify how to structure an Open Contract repo. The ``contract.sol`` and ``README.md`` files aren't used by the protocol and just recommended to make it easier to interpret the oracle logic. The protocol ultimately only cares about the contract that is deployed on Ethereum, and users should verify its code on etherscan for example, which they can do by clicking on the contract address at the top of the automatically generated frontend at https://dapp.opencontracts.io/#/your-github-account/your-contract-repo . The remaining files *are* used by the protocol, so let's dive into them:
 
 ::
 
@@ -46,7 +46,7 @@ The final, mandatory field is the contract ABI (short for *Application Binary In
 * Tip 2: because Solidity developers must represent floating point numbers as integers, another feature that we support is to add a "decimals" field to integer inputs or output, and our interface will know where to put the decimal point. For example, since 1 ETH is represented as a 1 followed by 18 zeros, we add ``"decimals": 18`` to the output element of the ``amountOffered`` `function of the FiatSwap contract <https://github.com/open-contracts/fiat-swap/blob/849e81eee05498536aeed8683d6ae977c82db1fd/interface.json#L160/>`_. 
 
 After adding the ABI to the JSON, you will also need to deploy the contract to get its contract address.
-To do this, open the **Deploy and Run Transactions** tab (bottom icon in Remix). For 'Environment', you want to select 'Injected Web3' which refers to your MetaMask wallet. When hitting "Deploy", your contract will be deployed to whatever network you set in your MetaMask wallet. For testing an Open Contract, we currently support the Ropsten testnet. Set your Metamask to Optimism if you're ready to go live with real ETH. Once the block containing your deployment is confirmed, you can copy the contract address from the corresponding element of the **Deployed Contracts** list and add it to the `interface.json`.
+To do this, open the **Deploy and Run Transactions** tab (bottom icon in Remix). For "Environment", you want to select "Injected Web3" which refers to your MetaMask wallet. When hitting "Deploy", your contract will be deployed to whatever network you set in your MetaMask wallet. For testing an Open Contract, we currently support the Ropsten testnet. Set your Metamask to Optimism if you're ready to go live with real ETH. Once the block containing your deployment is confirmed, you can copy the contract address from the corresponding element of the **Deployed Contracts** list and add it to the `interface.json`.
 
 Now your ``interface.json`` is complete, and you can already interact with your contract using the `OpenContracts Dapp frontend <https://dapp.opencontracts.io>`_. The interface will treat every contract function as a regular Solidity function. 
 
@@ -60,7 +60,21 @@ Once you created an oracle folder for each oracle function (in our sample contra
 
   $ curl -Ls pack.opencontracts.io | sh
 
-in the command line at the root of your contract repo. This downloads and compresses the packages listed in the `requirements.txt` file and places them into the respective oracle folders. It also generates an `oracleHashes.json` file at the root of your repo, which contains the SHA-256 hash of every oracle folder, uniquely identifying its contents. As we will show you shortly, these hashes are hardcoded into your contract in a way that allows our protocol to ensure that the oracle function can only be called with the results of exactly this specific oracle folder, executed in one of our oracle enclaves.
+in the command line at the root of your contract repo. This downloads and compresses the packages listed in the `requirements.txt` file and places them into the respective oracle folders. It also generates an `oracleHashes.json` file at the root of your repo, which contains the SHA-256 hash of every oracle folder, uniquely identifying its contents. For the proof-of-id contract, it looks as follows:
+
+.. code-block:: json
+
+  {
+      "createID": "0x28316674db6d4af06cdeb422d0fe308a4704b01b3e3487813a0d9dab458be665"
+  }
+
+because `createID` is the only folder in the repo containing an `oracle.py`, as `createID` is going to be the only oracle function of the contract. As we will show you next, these hashes are hardcoded into your contract in a way that allows our protocol to ensure that the oracle function can only be called with the results of exactly this specific oracle folder, executed in one of our oracle enclaves.
+
+NOTE (!): unfortunately, the download is currently not deterministic. So running the same command twice will result in a different oracle hash. To verify that a given folder hashes to a certain value, you should therefore run the "pack oracles" script without the download, via:
+
+.. code-block:: console
+
+  $ curl -Ls pack.opencontracts.io | DL=NO sh
 
 .. _writing-deploying:
 
@@ -70,15 +84,14 @@ In order to create an Open Contract, you must first write a piece of solidity co
 defines the Ethereum smart contract logic. For a more comprehensive tutorial of
 Ethereum smart contacts, we recommend starting `here <https://docs.soliditylang.org/en/v0.7.4/solidity-by-example.html>`_.
 
-In this tutorial, we will go through writing the `Proof-of-id contract <https://github.com/open-contracts/proof-of-id/blob/main/contract.sol>`_ step-by-step.
+In this tutorial, we will go through writing the `Proof-of-ID contract <https://github.com/open-contracts/proof-of-id/blob/main/contract.sol>`_ step-by-step.
 Writing this contract can be broken into two main steps: writing the ``contract.sol`` and writing the oracle logic.
 
 **Writing contract.sol**
-First we'll cover the template contract that you will be using. Navigate to 
-`Remix IDE <https://remix.ethereum.org/>`_ in your browser, and add the file
+First, navigate to `Remix IDE <https://remix.ethereum.org/>`_ in your browser, and create an empty file
 ``contract.sol`` under the ``contracts/`` directory.
 
-Like all other contracts, it will be importing the `OpenContractRopsten.sol <https://github.com/open-contracts/ethereum-protocol/blob/main/solidity_contracts/OpenContractRopsten.sol>`_ defined below:
+Like all other contracts (on ropsten), we will import the `OpenContractRopsten.sol <https://github.com/open-contracts/ethereum-protocol/blob/main/solidity_contracts/OpenContractRopsten.sol>`_ which looks as follows:
 
 .. code-block:: solidity
 
@@ -96,15 +109,16 @@ Like all other contracts, it will be importing the `OpenContractRopsten.sol <htt
             _;
         }
     }
+    
+    interface OpenContractsHub {
+        function setOracleHash(bytes4, bytes32) external;
+    }
 
 
-This contract defines a few simple properties: a hub (used to ensure that the
-contract is being called from a trusted "hub"), and a map of allowed IDs, called an **oracleHash**. **oracleHashes**
-are a unique hash of an oracle node that is allowed to execute a given contract, and is mapped to by a **selector**.
-The **selector** is a function name that the oracle will call to resolve the contract.
-When the constructor of a contract inheriting ``OpenContract`` is called, it will use the ``setOracle`` function to assign an oracleID to the contract. However, during development, the oracleID ``any`` is used to allow all oracle hashes. Next, the function modifier ``requiresOracle`` is used as a method to check that an oracleID is valid before proceeding to execute the contract's oracle function. You will see an example of this next when defining the proof-of-id contract's `createID <https://github.com/open-contracts/proof-of-id/blob/main/contract.sol#L23>`_ method, which uses the requiresOracle function.
+This defines the parent class for all Open Contracts, consisting three two simple parts: a pointer (called *interface* in solidity) to the Open Contracts Hub. Then it defines a `setOracleHash` function, which calls the Hub's `function with the same name <https://github.com/open-contracts/ethereum-protocol/blob/99e3d47be68f253dd78a60c0f05e6a3279bf8a47/solidity_contracts/Hub.sol#L19/>`_. This tells our protocol which ``oracleHash`` you want to allow for a given function.
+The second is the `requiresOracle` function modifier, which you can place at the top of a function to declare it as an oracle function, as we will see shortly. This will ensure that the function can only be called through our protocol.
 
-The Proof-of-Id contract uses the secure enclaves to allow users to generate a unique encrypted ID that is verified using an external form of verification. A user proves their identity to the oracle by their SSN account. First, let us define the Proof-of-Id OpenContract in contract.sol in Remix under `contracts/contract.sol`: 
+Let's see how the Proof-of-ID contract inherits from the ``OpenContract`` class. Place the following code into your ``contract.sol`` file in Remix:
 
 .. code-block:: solidity
 
@@ -117,27 +131,20 @@ The Proof-of-Id contract uses the secure enclaves to allow users to generate a u
         mapping(address => bytes32) private _ID;
 
         constructor() {
-            setOracle("any", this.createID.selector);  // developer mode, allows any oracle for 'createID'
+            setOracleHash(this.createID.selector, 0x28316674db6d4af06cdeb422d0fe308a4704b01b3e3487813a0d9dab458be665);
         }
         ....
     }
 
-In the first half of the contract, we define the solidity syntax version, followed by
-importing the OpenContract.sol base contract implementation which we defined above.
-Next, the contract ``ProofOfID`` is defined inheriting the OpenContract structure
-(see `link <https://www.tutorialspoint.com/solidity/solidity_inheritance.htm>`_ for 
-explanation of Solidity inheritance).
-The two mappings _account and _ID form a bi-directional mapping between ETH
-accounts addresses and the generated unique IDs for a user, which is acquired
-once they have proven their identity to the oracle by securely verifying their last
-4-digits of their SSN.
-As mentioned above, in the constructor, the ``setOracle`` method currently uses
-"any" for the oracleHash to allow the createID method to be called on any oracle 
-node for development purposes.
 
-Once the mappings and constructor are defined, functions used to get IDs and accounts
-using these mappings are specified, followed by the createID method, which
-is called by the oracle when the SSN proof has been verified.
+In the first half of the contract, we define the solidity syntax version and import the OpenContractRopsten.sol we examined above.
+Next, the contract ``ProofOfID`` inherits the OpenContract structure
+(see `link <https://www.tutorialspoint.com/solidity/solidity_inheritance.htm>`_ for 
+explanation of Solidity inheritance), which just means it can now use the ``setOracleHash`` function and `requiresOracle`` modifier from its parent. The two mappings _account and _ID will form a bi-directional mapping between ETH accounts addresses and the generated unique IDs for a user, which we will later compute from the unique personal information displayed on the user's social security account website. The oracle folder containing the corresponding logic has the hash ``0x283...```. Using the ``setOracleHash`` expression in the constructor of the contract, we declare that the ``createID`` function (identified by the four bytes returned from ``this.createID.selector``) can only be called with the results from this oracle folder.
+
+Once the mappings and constructor are defined, we can write our functions.
+The first two are simple solidity functions which tell us the account for a given ID and vice versa. 
+The interesting one is the ``createID`` function, which contains ``requiresOracle`` at the top:
 
 .. code-block:: solidity
 
@@ -160,47 +167,47 @@ is called by the oracle when the SSN proof has been verified.
         }
     }
 
-Note that for any function to modify the _account and _ID mappings, they must
-first call the OpenContract's checkOracle function modifier which confirms that the
-request is being made by a valid oracleHash. It is important to note that
-the first argument of any method using the checkOracle function must always
-have oracleHash as it's first argument, so it can properly interact with the
-function modifier. After this check is passed, the user is able to map their address
-to their generated user ID, completing the Proof-of-ID contract. This will result
-in their account paying out to the correct provider wallet.
+This function allows accounts to register a new ID, updating the ``_ID`` and ``_account`` mappings accordingly. The ``requiresOracle`` modifier makes 
+sure that this function can only be called by the Hub, which in turn makes sure that the results it forwards were computed by an oracle with the hash ``0x283..``.
+
 
 Implementing the oracle logic and include it in your repo
 ---------------------------------------------------------
 
-Last but not least, the `oracle.py <https://github.com/open-contracts/proof-of-id/blob/main/createID/oracle.py>`_ script is what enables the key contribution
-of the OpenContracts platform: the ability to connect smart contract transactions
-to events which are verified by the oracle. This script will parse an html
-that gets generated by a user once they have opened an interactive session to
-log into an account and access data that only they can provide.
-To use this platform, the script imports the opencontracts module from the
-`enclave-protocol <https://github.com/open-contracts/enclave-protocol/blob/main/oracle_enclave/user/opencontracts.py#L83>`_,
-and some additional modules (bs4 and re) for parsing purposes.
+Last but not least, the `oracle.py <https://github.com/open-contracts/proof-of-id/blob/main/createID/oracle.py>`_ script is the key feature
+of the OpenContracts protocol: the ability to condition smart contracts on real-world information which is by the oracle enclave. 
 
-Next, in every oracle script, an ``opencontracts.enclave_backend()`` context manager
-is opened to give the script access to the enclave user API, which defines the following
-functions:
+For the Proof-of-ID contract, this script will instruct the user to log into and save their social security account website, then parse its html to extract their personal information, and compute their personal ID from it.
 
-* ``enclave.print()``: Prints something to the user console (which is displayed on the opencontracts.io contract frontend)
-* ``enclave.interactive_session()``: Creates a secure browsing session inside the enclave for the user to navigate to a desired url containing the data to be parsed
-* ``enclave.keccak()``: Wrapper to call the ``eth_utils.keccak`` function to generate a hash
-* ``enclave.expect_delay()``: Function to create a loading bar in the front-end
-* ``enclave.user()``: Returns the user ETH address after being verified by the enclave (by checking a signed random string)
-* ``enclave.submit()``: Calls the oracle function in the smart contract once the enclave has verified the parsed data
+To use this platform, the script imports the ``opencontracts`` module which (currently) only exists
+`inside the enclave <https://github.com/open-contracts/enclave-protocol/blob/main/oracle_enclave/user/opencontracts.py#L83>`_, and exposes the a few special Open Contracts features. Otherwise, the script can of course import all other python modules that are contained in standard python (such as ``re``) or in `requirements.txt` (such as ``bs4``).
+
+Next, in every oracle script, an ``with opencontracts.session() as session:`` context manager is opened to give the script access to the enclave user API, and forward errors to the user wheverer possible. The ``session`` object contains the following special functions:
+
+* ``session.print(message)``: Displays a message to the user
+* ``session.interactive_browser(url, parser, instructions)``: Creates an interactive browsing session in which the user controls a chrome instance inside the enclave, is instructed to navigate somewhere and save the result.
+* ``session.keccak(*args, types)``: Computes Solidity's version of SHA-256 called "keccack", wrapping ethereum's ``eth_utils.keccak`` package
+* ``session.expect_delay(seconds, message)``: Displays a loading bar to the user, with a message to the user why they haves to wait
+* ``session.user()``: Returns the user's ETH address after being verified by the enclave (by letting them sign a random string)
+* ``session.submit(*args, types, function_name)``: Calls the oracle function in the smart contract with the final results
+
+The ``oracle.py`` file of the Proof-of-ID contract begins as follows:
 
 .. code-block:: python
 
     import opencontracts
     from bs4 import BeautifulSoup
     import re
-
-    with opencontracts.enclave_backend() as enclave:
-      enclave.print(f'Proof of Identity started running in enclave!')
-
+    
+    with opencontracts.session() as session:
+      session.print(f'Proof of ID started running in enclave!')
+      
+      instructions = """
+      1) Log into your account
+      2) Navigate to 'My Profile'
+      3) Click 'Submit'
+      """
+      
       def parser(url, html):
         target_url = "https://secure.ssa.gov/myssa/myprofile-ui/main"
         assert url == target_url, f"You clicked 'Submit' on '{url}', but should do so on '{target_url}'."
@@ -210,45 +217,40 @@ functions:
           if key.startswith("SSN:"): last4ssn = int(re.findall('[0-9]{4}', value.strip())[0])
           if key.startswith("Date of Birth:"): bday = value.strip()
         return name, bday, last4ssn
+      
+      name, bday, last4ssn = session.interactive_browser('https://secure.ssa.gov/RIL/', parser, instructions)
 
+After importing everything and opening the context manager, we define the ``instructions`` for the user and a ``parser`` function, which takes as input a ``url`` string a ``html`` string, performs the necessary checks and parses the info we need. The external ``BeautifulSoup`` package makes this very easy. Both the ``parser`` and the ``instructions`` are passed to the ``session.interactive_browser`` function. The instructions are displayed to the user. Everytime they hit save, the parser is executed over their current html. If it throws an error, the error message is displayed to the user. If it doesn't, the browser closes and the results are returned.
 
-In this first section of the code, the parser method is defined to specify how it
-will extract the SSN, birthday, and name of the users page once they have signed 
-into the SSA government portal through the interactive session.
+Next, we compute the user's ID from their private details:
 
 .. code-block:: python
 
-   # ... imports
+   ...
    with opencontracts.enclave_backend() as enclave:
-      # ... parser
-      name, bday, last4ssn = enclave.interactive_session(url='https://secure.ssa.gov/RIL/', parser=parser,
-                                                         instructions="Login and visit your SSN account page.")
-
+      ...
+      
       # we divide all 10000 possible last4ssn into 32 random buckets, by using only the last 5=log2(32) bits
       # so last4ssn isn't revealed even if ssn_bucket can be reverse-engineered from ID
-      ssn_bucket = int(enclave.keccak(last4ssn, types=('uint256',))[-1]) % 32
-      ID = enclave.keccak(name, bday, ssn_bucket, types=('string', 'string', 'uint8'))
-
+      ssn_bucket = int(session.keccak(last4ssn, types=('uint256',))[-1]) % 32
+      ID = session.keccak(name, bday, ssn_bucket, types=('string', 'string', 'uint8'))  
+      
       # publishing your SSN reveals that last4ssn was one of the following possibilites:
       possibilities = list()
-      enclave.expect_delay(8, "Computing ID...")
+      session.expect_delay(8, "Computing ID...")
       for possibility in range(10000):
-        bucket = int(enclave.keccak(possibility, types=("uint256",))[-1]) % 32
+        bucket = int(session.keccak(possibility, types=("uint256",))[-1]) % 32
         if bucket == ssn_bucket: possibilities.append(str(possibility).zfill(4))
       n = len(possibilities)
-
+    
       warning = f'Computed your ID: {"0x" + ID.hex()}, which may reveal your name ({name}), birthday ({bday})'
-      enclave.print(warning + f' and that your last 4 SSN digits are one of the following {n} possibilites: {possibilities}')
+      session.print(warning + f' and that your last 4 SSN digits are one of the following {n} possibilites: {possibilities}')
+      
+      session.submit(session.user(), ID, types=('address', 'bytes32',), function_name='createID')
 
-      enclave.submit(enclave.user(), ID, types=('address', 'bytes32',), function_name='createID')
+Since this contract is a bit privacy sensitive, we also display a warning to the user telling them exactly what sensitive information might be revealed by submitting their ID to the public blockchain. It may reveal their name and birthday, but doesn't reveal their last 4 ssn digits, only reduces the possibilities for those 4 digits from 10000 to around 300.
 
-In the latter section, the enclave ``interactive_session`` stores the result from the parser 
-as variables, and then performs a randomizing step which cryptographically obscures
-the last 4 SSN from any non-trusted parties (using ``keccak``). Finally, it 
-submits the result to the ``createID`` function, which stores the mapping from the
-user's ETH account to their newly-generated unique SSN hash.
+Finally, it submits the result to the ``createID`` function, which stores the mapping from the user's ETH account to their newly-generated unique ID.
 
 Congrats! You have completed the walkthrough of the first Open Contract!
-Now you can try joining the `Discord <https://discord.gg/5X74aw2q>`_ and 
-`Reddit <https://reddit.com/r/open_contracts>`_ communities to connect with
-developers and learn more, buy our token on `Uniswap <https://app.uniswap.org/#/swap?outputCurrency=0xa2d9519A8692De6E47fb9aFCECd67737c288737F&chain=mainnet>`_.
+Please join our `Discord <https://discord.gg/5X74aw2q>`_ community to get developer support and build some contracts together! 
