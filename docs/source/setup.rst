@@ -1,4 +1,4 @@
-How to be an Enclave Provider
+Providing Enclaves to the Protocol
 =====
 
 Setting up AWS EC2 Instance
