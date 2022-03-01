@@ -21,9 +21,3 @@ In these docs, you will learn:
    setup
 
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
