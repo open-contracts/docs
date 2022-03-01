@@ -1,7 +1,7 @@
 How to setup an Oracle Provider node
 =====
 
-Setting up AWS EC2 Instances
+Setting up AWS EC2 Instance
 ----------------------------
 This doc will outline how to set up and provide and our oralce enclave to the protocol, earning OPN in exchange.
 We will update the docs once the provision of registry enclaves is supported as well.
@@ -33,7 +33,7 @@ Which installs dependencies and downloads our repo from https://github.com/open-
 Login again afterwards, and proceed to build the enclave images.
 
 
-Build and run enclave
+Provide an Oracle Enclave
 ---------------------
 To build the enclave images from source, you simply run:
 
@@ -73,7 +73,7 @@ You can now log out. To see the output of the EC2 side, you can attach to the co
 
 Exit the console via ``Ctrl+B``, then ``D``.
 
-Running a Registry Enclave
+Provide a Registry Enclave
 -----------------------
 
 Right now, the verifier contract does not permit new registries yet, to give the main developers tighter controls of the system initially.
