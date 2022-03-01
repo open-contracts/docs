@@ -1,4 +1,4 @@
-How to setup an Oracle Provider node
+How to be an Enclave Provider
 =====
 
 Setting up AWS EC2 Instance
