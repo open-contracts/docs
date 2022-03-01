@@ -187,7 +187,7 @@ Next, in every oracle script, an ``with opencontracts.session() as session:`` co
 * ``session.print(message)``: Displays a message to the user
 * ``session.interactive_browser(url, parser, instructions)``: Creates an interactive browsing session in which the user controls a chrome instance inside the enclave, is instructed to navigate somewhere and save the result.
 * ``session.keccak(*args, types)``: Computes Solidity's version of SHA-256 called "keccack", wrapping ethereum's ``eth_utils.keccak`` package
-* ``session.expect_delay(seconds, message)``: Displays a loading bar to the user, with a message to the user why they haves to wait
+* ``session.expect_delay(seconds, message)``: Displays a loading bar to the user, with a message to the user why they have to wait
 * ``session.user()``: Returns the user's ETH address after being verified by the enclave (by letting them sign a random string)
 * ``session.submit(*args, types, function_name)``: Calls the oracle function in the smart contract with the final results
 
