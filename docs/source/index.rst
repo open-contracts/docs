@@ -13,7 +13,7 @@ Open Contracts consist of smart contracts on Ethereum, and off-chain logic bundl
 
 If you set up your repo correctly, you will automatically create a Web3 page where users can interact with your contract, hosted at:
 https://dapp.opencontracts.io/#/github-user/repo-name 
-Anyone can fork your repo to host your contract under their own github username as well. Anyone can fork our website and host it under their own domain as well.
+Anyone can fork your repo to host your contract under their own github username. Anyone can fork our website and host it under their own domain.
 
 Fortunately, the docs are short and simple:
 
