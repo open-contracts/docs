@@ -253,4 +253,4 @@ Since this contract is a bit privacy sensitive, we also display a warning to the
 Finally, it submits the result to the ``createID`` function, which stores the mapping from the user's ETH account to their newly-generated unique ID.
 
 Congrats! You have completed the walkthrough of the first Open Contract!
-Please join our `Discord <https://discord.gg/5X74aw2q>`_ community to get developer support and build some contracts together! 
+Join our `Discord <https://discord.gg/5X74aw2q>`_ community to get developer support and build some contracts together! 
