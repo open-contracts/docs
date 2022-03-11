@@ -119,7 +119,7 @@ Like all other contracts (on ropsten), we will import the `OpenContractRopsten.s
 This defines the parent class for all Open Contracts, consisting three two simple parts: a pointer (called *interface* in solidity) to the Open Contracts Hub. Then it defines a `setOracleHash` function, which calls the Hub's `function with the same name <https://github.com/open-contracts/ethereum-protocol/blob/99e3d47be68f253dd78a60c0f05e6a3279bf8a47/solidity_contracts/Hub.sol#L19/>`_. This tells our protocol which ``oracleHash`` you want to allow for a given function.
 The second is the `requiresOracle` function modifier, which you can place at the top of a function to declare it as an oracle function, as we will see shortly. This will ensure that the function can only be called through our protocol.
 
-**If you're ready to make it real:** our protocol is live on Ethereum's Layer 2 networks Optimism and Arbitrum. In the import statement below, just replace the word `OpenContractRopsten.sol` with `OpenContractOptimism.sol` or `OpenContractArbitrum.sol`, so your contract knows the right location of the Hub on the respective network. And set your MetaMask to the respective network when using Remix.
+**If you're ready to make it real:** our protocol is live on Ethereum's Layer 2 networks Optimism and Arbitrum. In the import statement below, just replace the word ``OpenContractRopsten.sol`` with ``OpenContractOptimism.sol`` or ``OpenContractArbitrum.sol``, so your contract knows the right location of the Hub on the respective network. And set your MetaMask to the respective network when using Remix.
 
 Let's see how the Proof-of-ID contract inherits from the ``OpenContract`` class. Place the following code into your ``contract.sol`` file in Remix:
 
