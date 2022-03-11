@@ -92,7 +92,7 @@ Writing this contract can be broken into two main steps: writing the ``contract.
 First, navigate to `Remix IDE <https://remix.ethereum.org/>`_ in your browser, and create an empty file
 ``contract.sol`` under the ``contracts/`` directory.
 
-Like all other contracts (on ropsten), we will import the `OpenContractRopsten.sol <https://github.com/open-contracts/ethereum-protocol/blob/main/solidity_contracts/OpenContractRopsten.sol>`_ which looks as follows:
+Like all other contracts (on ropsten), we will import the `OpenContractRopsten.sol <https://github.com/open-contracts/ethereum-protocol/blob/main/solidity_contracts/OpenContractRopsten.sol>`_ parent class. It looks as follows:
 
 .. code-block:: solidity
 
@@ -116,8 +116,7 @@ Like all other contracts (on ropsten), we will import the `OpenContractRopsten.s
     }
 
 
-This defines the parent class for all Open Contracts, consisting three two simple parts: a pointer (called *interface* in solidity) to the Open Contracts Hub. Then it defines a `setOracleHash` function, which calls the Hub's `function with the same name <https://github.com/open-contracts/ethereum-protocol/blob/99e3d47be68f253dd78a60c0f05e6a3279bf8a47/solidity_contracts/Hub.sol#L19/>`_. This tells our protocol which ``oracleHash`` you want to allow for a given function.
-The second is the `requiresOracle` function modifier, which you can place at the top of a function to declare it as an oracle function, as we will see shortly. This will ensure that the function can only be called through our protocol.
+This defines the parent class for all Open Contracts, consisting three two simple parts: a `setOracleHash` function, which calls the Hub's `function with the same name <https://github.com/open-contracts/ethereum-protocol/blob/99e3d47be68f253dd78a60c0f05e6a3279bf8a47/solidity_contracts/Hub.sol#L19/>`_ to tell our protocol which ``oracleHash`` you want to allow for a given function. The second is the `requiresOracle` function modifier, which you can place at the top of a function to declare it as an oracle function, as we will see shortly. This will ensure that the function can only be called through our protocol.
 
 **If you're ready to make it real:** our protocol is live on Ethereum's Layer 2 networks Optimism and Arbitrum. In the import statement below, just replace the word ``OpenContractRopsten.sol`` with ``OpenContractOptimism.sol`` or ``OpenContractArbitrum.sol``, so your contract knows the right location of the Hub on the respective network. And set your MetaMask to the respective network when using Remix.
 
@@ -140,7 +139,7 @@ Let's see how the Proof-of-ID contract inherits from the ``OpenContract`` class.
     }
 
 
-In the first half of the contract, we define the solidity syntax version and import the OpenContractRopsten.sol we examined above.
+In the first half of the contract, we define the solidity syntax version and import the ``OpenContractRopsten.sol`` we examined above.
 Next, the contract ``ProofOfID`` inherits the OpenContract structure
 (see `link <https://www.tutorialspoint.com/solidity/solidity_inheritance.htm>`_ for 
 explanation of Solidity inheritance), which just means it can now use the ``setOracleHash`` function and `requiresOracle`` modifier from its parent. The two mappings _account and _ID will form a bi-directional mapping between ETH accounts addresses and the generated unique IDs for a user, which we will later compute from the unique personal information displayed on the user's social security account website. The oracle folder containing the corresponding logic has the hash ``0x283...```. Using the ``setOracleHash`` expression in the constructor of the contract, we declare that the ``createID`` function (identified by the four bytes returned from ``this.createID.selector``) can only be called with the results from this oracle folder.
