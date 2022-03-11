@@ -140,7 +140,7 @@ Let's see how the Proof-of-ID contract inherits from the ``OpenContract`` class.
 
 
 In the first half of the contract, we define the solidity syntax version and import the ``OpenContractRopsten.sol`` we examined above.
-Next, the contract ``ProofOfID`` inherits the OpenContract structure
+Next, the contract ``ProofOfID`` inherits the ``OpenContract`` parent classs
 (see `link <https://www.tutorialspoint.com/solidity/solidity_inheritance.htm>`_ for 
 explanation of Solidity inheritance), which just means it can now use the ``setOracleHash`` function and `requiresOracle`` modifier from its parent. The two mappings _account and _ID will form a bi-directional mapping between ETH accounts addresses and the generated unique IDs for a user, which we will later compute from the unique personal information displayed on the user's social security account website. The oracle folder containing the corresponding logic has the hash ``0x283...```. Using the ``setOracleHash`` expression in the constructor of the contract, we declare that the ``createID`` function (identified by the four bytes returned from ``this.createID.selector``) can only be called with the results from this oracle folder.
 
