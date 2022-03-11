@@ -176,8 +176,8 @@ sure that this function can only be called by the Hub, which in turn makes sure 
 Implementing the oracle logic and include it in your repo
 ---------------------------------------------------------
 
-Last but not least, the `oracle.py <https://github.com/open-contracts/proof-of-id/blob/main/createID/oracle.py>`_ script is the key feature
-of the OpenContracts protocol: the ability to condition smart contracts on real-world information which is by the oracle enclave. 
+Last but not least, the `oracle.py <https://github.com/open-contracts/proof-of-id/blob/main/createID/oracle.py>`_ script enables the key feature
+of the OpenContracts protocol: the ability to condition smart contracts on real-world information which is verified by the oracle enclave. 
 
 For the Proof-of-ID contract, this script will instruct the user to log into and save their social security account website, then parse its html to extract their personal information, and compute their personal ID from it.
 
