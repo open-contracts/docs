@@ -38,7 +38,7 @@ contract <https://github.com/open-contracts/proof-of-id>`_.
   "abi": [{...}, {...}, ...]
  }
 
-At the top level of the interface JSON object is the contract "name", and a mandatory dict containing the addresses of the contract on various chains. The supported strings are "mainnet", "optimism" and "ropsten", with more to come in the near future. Below, you can optionally specify "descriptions" dict containing a string that either explains the "contract" as a whole, or the respective contract function, e.g. "createID". These will be displayed to the user by the frontend. 
+At the top level of the interface JSON object is the contract "name", and a mandatory dict containing the addresses of the contract on various chains. The supported strings are "arbitrum", "optimism" and "ropsten", but more may come in the future. Below, you can optionally specify "descriptions" dict containing a string that either explains the "contract" as a whole, or the respective contract function, e.g. "createID". These will be displayed to the user by the frontend. 
 
 The final, mandatory field is the contract ABI (short for *Application Binary Interface*). The ABI is a list of functions that are exposed by the contract, including information about their respective inputs and outputs. When compiling a Solidity contract in the `Remix IDE <https://remix.ethereum.org/>`_, it automatically generates the ABI for you. You just need to copy it by clicking on the copy-icon below **Compilation Details** once you have compiled the contract, and paste it into the ``ìnterface.json``. Two additional ABI tipps:
 
@@ -70,7 +70,7 @@ in the command line at the root of your contract repo. This downloads and compre
 
 because `createID` is the only folder in the repo containing an `oracle.py`, as `createID` is going to be the only oracle function of the contract. As we will show you next, these hashes are hardcoded into your contract in a way that allows our protocol to ensure that the oracle function can only be called with the results of exactly this specific oracle folder, executed in one of our oracle enclaves.
 
-NOTE (!): unfortunately, the download is currently not deterministic. So running the same command twice will result in a different oracle hash. To verify that a given folder hashes to a certain value, you should therefore run the "pack oracles" script without the download, via:
+* **NOTE (!):** unfortunately, the download is currently not deterministic. So running the same command twice will result in a different oracle hash. To verify that a given folder hashes to a certain value, you should therefore run the "pack oracles" script without the download, via:
 
 .. code-block:: console
 
@@ -88,6 +88,7 @@ In this tutorial, we will go through writing the `Proof-of-ID contract <https://
 Writing this contract can be broken into two main steps: writing the ``contract.sol`` and writing the oracle logic.
 
 **Writing contract.sol**
+
 First, navigate to `Remix IDE <https://remix.ethereum.org/>`_ in your browser, and create an empty file
 ``contract.sol`` under the ``contracts/`` directory.
 
@@ -117,6 +118,8 @@ Like all other contracts (on ropsten), we will import the `OpenContractRopsten.s
 
 This defines the parent class for all Open Contracts, consisting three two simple parts: a pointer (called *interface* in solidity) to the Open Contracts Hub. Then it defines a `setOracleHash` function, which calls the Hub's `function with the same name <https://github.com/open-contracts/ethereum-protocol/blob/99e3d47be68f253dd78a60c0f05e6a3279bf8a47/solidity_contracts/Hub.sol#L19/>`_. This tells our protocol which ``oracleHash`` you want to allow for a given function.
 The second is the `requiresOracle` function modifier, which you can place at the top of a function to declare it as an oracle function, as we will see shortly. This will ensure that the function can only be called through our protocol.
+
+**If you're ready to make it real:** our protocol is live on Ethereum's Layer 2 networks Optimism and Arbitrum. In the import statement below, just replace the word `OpenContractRopsten.sol` with `OpenContractOptimism.sol` or `OpenContractArbitrum.sol`, so your contract knows the right location of the Hub on the respective network. And set your MetaMask to the respective network when using Remix.
 
 Let's see how the Proof-of-ID contract inherits from the ``OpenContract`` class. Place the following code into your ``contract.sol`` file in Remix:
 
